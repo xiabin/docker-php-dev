@@ -1,0 +1,47 @@
+## PHP-FPM Servers ##
+upstream php-fpm {
+    server fpm:9000;
+}
+
+server {
+  server_name default;
+  root        /app/default;
+  index       index.php;
+
+  client_max_body_size 100M;
+  fastcgi_read_timeout 1800;
+
+  location / {
+    try_files $uri $uri/ /index.php$is_args$args;
+  }
+
+  location /status {
+     access_log off;
+     allow all;
+     include /etc/nginx/fastcgi_params;
+     fastcgi_param SCRIPT_FILENAME /status;
+     fastcgi_pass php-fpm;
+  }
+
+  location /ping {
+     access_log off;
+     allow all;
+     include fastcgi_params;
+     fastcgi_param SCRIPT_FILENAME /ping;
+     fastcgi_pass php-fpm;
+  }
+
+  location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+    expires       max;
+    log_not_found off;
+    access_log    off;
+  }
+
+  location ~ \.php$ {
+    try_files     $uri =404;
+    include       fastcgi_params;
+    fastcgi_index index.php;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_pass  php-fpm;
+  }
+}
